@@ -42,6 +42,10 @@
         video.mirror {
             transform: scaleX(-1);
         }
+        /* プレビュー用のスタイル */
+        #livePreview.mirror {
+            transform: scaleX(-1);
+        }
 
         #controls {
             background-color: var(--panel-bg);
@@ -135,6 +139,11 @@
                 <button id="btnBottom">した</button>
             </div>
         </div>
+        
+        <div class="setting-group" style="margin-top: 10px; border-top: 1px solid #555; padding-top: 10px;">
+            <label style="font-size:0.8rem;">プレビュー <span id="cameraName" style="font-size:0.7rem; color:#aaa;"></span></label>
+            <video id="livePreview" autoplay playsinline muted style="width: 100%; border-radius: 6px; background: #000;"></video>
+        </div>
 
         <div style="font-size: 0.7rem; color: #777; margin-top: auto;">
             カメラを切りかえて さつえいできるよ
@@ -152,25 +161,61 @@
         const body = document.body;
         const btnRight = document.getElementById('btnRight');
         const btnBottom = document.getElementById('btnBottom');
+        const livePreview = document.getElementById('livePreview');
+        const cameraName = document.getElementById('cameraName');
 
         let chunks = [];
         let mediaRecorder = null;
+        let currentStream = null;
         let currentFacingMode = "user"; // 初期値はインカメラ
 
         delayRange.addEventListener('input', () => {
             delaySecondsDisplay.textContent = delayRange.value;
         });
 
+        // カメラを開始・再起動する関数
+        async function startCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            // UI更新
+            cameraName.textContent = (currentFacingMode === "user") ? "(インカメラ)" : "(アウトカメラ)";
+            if (currentFacingMode === "user") {
+                livePreview.classList.add('mirror');
+                videoElem.classList.add('mirror');
+            } else {
+                livePreview.classList.remove('mirror');
+                videoElem.classList.remove('mirror');
+            }
+
+            const constraints = {
+                video: { 
+                    facingMode: { exact: currentFacingMode }, 
+                    width: { ideal: 1280 }, 
+                    height: { ideal: 720 } 
+                },
+                audio: false
+            };
+
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                livePreview.srcObject = currentStream;
+                statusBadge.textContent = "カメラじゅんびOK";
+            } catch (err) {
+                console.error(err);
+                statusBadge.textContent = "カメラエラー";
+                alert("カメラがつかえませんでした。");
+            }
+        }
+
+        // ページ読み込み時にカメラを開始
+        startCamera();
+
         // カメラ切り替え
         switchBtn.addEventListener('click', () => {
             currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-            // インカメラの時だけ鏡（反転）にする
-            if (currentFacingMode === "user") {
-                videoElem.classList.add('mirror');
-            } else {
-                videoElem.classList.remove('mirror');
-            }
-            statusBadge.textContent = "カメラをきりかえました";
+            startCamera();
         });
 
         btnRight.addEventListener('click', () => {
@@ -186,16 +231,10 @@
 
         startBtn.addEventListener('click', async () => {
             try {
-                // Android等では exact (厳格) を指定しないとカメラが切り替わらないことがあります
-                const constraints = {
-                    video: { 
-                        facingMode: { exact: currentFacingMode }, 
-                        width: { ideal: 1280 }, 
-                        height: { ideal: 720 } 
-                    },
-                    audio: false
-                };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                if (!currentStream) {
+                    await startCamera();
+                }
+                if (!currentStream) return;
 
                 startBtn.style.display = 'none';
                 switchBtn.style.display = 'none';
@@ -203,7 +242,7 @@
                 delayRange.disabled = true;
                 statusBadge.textContent = `${delayRange.value}秒ごに うごきだすよ`;
 
-                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder = new MediaRecorder(currentStream);
                 mediaRecorder.ondataavailable = (e) => {
                     if (e.data.size > 0) {
                         chunks.push(e.data);
