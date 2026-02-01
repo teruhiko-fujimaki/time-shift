@@ -52,6 +52,10 @@
         video.mirror {
             transform: scaleX(-1);
         }
+        /* プレビュー用のスタイル */
+        #livePreview.mirror {
+            transform: scaleX(-1);
+        }
 
         /* プレビュー用のスタイル */
         #livePreview.mirror {
@@ -192,6 +196,11 @@
                 <button id="btnBottom">した</button>
             </div>
         </div>
+        
+        <div class="setting-group" style="margin-top: 10px; border-top: 1px solid #555; padding-top: 10px;">
+            <label style="font-size:0.8rem;">プレビュー <span id="cameraName" style="font-size:0.7rem; color:#aaa;"></span></label>
+            <video id="livePreview" autoplay playsinline muted style="width: 100%; border-radius: 6px; background: #000;"></video>
+        </div>
 
         <div class="setting-group" style="margin-top: 10px; border-top: 1px solid #555; padding-top: 10px;">
             <label style="font-size:0.8rem;">プレビュー <span id="cameraName"
@@ -234,6 +243,7 @@
             delaySecondsDisplay.textContent = delayRange.value;
         });
 
+<<<<<<< HEAD
         // サポートされているMIMEタイプを取得
         function getSupportedMimeType() {
             const types = [
@@ -252,6 +262,8 @@
             return 'video/webm'; // フォールバック
         }
 
+=======
+>>>>>>> 899a5fce19cf277559d3cad211439cc8b9cb6459
         // カメラを開始・再起動する関数
         async function startCamera() {
             if (currentStream) {
@@ -269,10 +281,17 @@
             }
 
             const constraints = {
+<<<<<<< HEAD
                 video: {
                     facingMode: { exact: currentFacingMode },
                     width: { ideal: 1280 },
                     height: { ideal: 720 }
+=======
+                video: { 
+                    facingMode: { exact: currentFacingMode }, 
+                    width: { ideal: 1280 }, 
+                    height: { ideal: 720 } 
+>>>>>>> 899a5fce19cf277559d3cad211439cc8b9cb6459
                 },
                 audio: false
             };
@@ -281,11 +300,14 @@
                 currentStream = await navigator.mediaDevices.getUserMedia(constraints);
                 livePreview.srcObject = currentStream;
                 statusBadge.textContent = "カメラじゅんびOK";
+<<<<<<< HEAD
 
                 // MIMEタイプ決定（カメラ起動後に確認）
                 mimeType = getSupportedMimeType();
                 console.log("Selected MIME:", mimeType);
 
+=======
+>>>>>>> 899a5fce19cf277559d3cad211439cc8b9cb6459
             } catch (err) {
                 console.error(err);
                 statusBadge.textContent = "カメラエラー";
@@ -325,6 +347,7 @@
                 stopBtn.style.display = 'block';
                 delayRange.disabled = true;
 
+<<<<<<< HEAD
                 const delaySec = parseInt(delayRange.value, 10);
                 statusBadge.textContent = `${delaySec}秒ためています...`;
 
@@ -335,6 +358,18 @@
                 mediaSource.addEventListener('sourceopen', () => {
                     setupSourceBuffer(delaySec);
                 });
+=======
+                mediaRecorder = new MediaRecorder(currentStream);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        chunks.push(e.data);
+                        if (chunks.length >= delayRange.value && videoElem.paused) {
+                            startPlayback();
+                        }
+                    }
+                };
+                mediaRecorder.start(1000);
+>>>>>>> 899a5fce19cf277559d3cad211439cc8b9cb6459
 
             } catch (err) {
                 console.error(err);
@@ -422,5 +457,9 @@
         stopBtn.addEventListener('click', () => location.reload());
     </script>
 </body>
+<<<<<<< HEAD
 
 </html>
+=======
+</html>
+>>>>>>> 899a5fce19cf277559d3cad211439cc8b9cb6459
