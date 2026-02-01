@@ -1,0 +1,16 @@
+{
+  "name": "タイムシフト再生",
+  "short_name": "タイムシフト",
+  "description": "10秒前の自分を確認できる体育学習アプリ",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#4CAF50",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
