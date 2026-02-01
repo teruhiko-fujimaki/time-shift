@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <link rel="manifest" href="manifest.json">
@@ -11,6 +12,7 @@
             --accent-color: #4CAF50;
             --switch-color: #2196F3;
         }
+
         body {
             margin: 0;
             font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -21,8 +23,14 @@
             overflow: hidden;
             transition: flex-direction 0.3s ease;
         }
-        body.layout-right { flex-direction: row; }
-        body.layout-bottom { flex-direction: column; }
+
+        body.layout-right {
+            flex-direction: row;
+        }
+
+        body.layout-bottom {
+            flex-direction: column;
+        }
 
         #video-container {
             flex: 1;
@@ -33,13 +41,20 @@
             position: relative;
             overflow: hidden;
         }
+
         video {
             width: 100%;
             height: 100%;
             object-fit: contain;
         }
+
         /* 鏡（反転）モードをクラスで制御 */
         video.mirror {
+            transform: scaleX(-1);
+        }
+
+        /* プレビュー用のスタイル */
+        #livePreview.mirror {
             transform: scaleX(-1);
         }
 
@@ -49,17 +64,44 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
             z-index: 10;
         }
-        body.layout-right #controls { width: 220px; height: 100%; }
-        body.layout-bottom #controls { width: 100%; height: auto; }
 
-        h2 { font-size: 1rem; margin: 0; color: var(--accent-color); }
-        .setting-group { display: flex; flex-direction: column; gap: 5px; }
-        
-        .display-value { font-size: 1.5rem; text-align: center; font-weight: bold; margin: 2px 0; }
-        input[type="range"] { width: 100%; height: 25px; cursor: pointer; }
+        body.layout-right #controls {
+            width: 220px;
+            height: 100%;
+        }
+
+        body.layout-bottom #controls {
+            width: 100%;
+            height: auto;
+        }
+
+        h2 {
+            font-size: 1rem;
+            margin: 0;
+            color: var(--accent-color);
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .display-value {
+            font-size: 1.5rem;
+            text-align: center;
+            font-weight: bold;
+            margin: 2px 0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 25px;
+            cursor: pointer;
+        }
 
         .btn {
             padding: 8px 12px;
@@ -70,9 +112,21 @@
             font-weight: bold;
             transition: 0.2s;
         }
-        #startBtn { background-color: var(--accent-color); color: white; }
-        #switchBtn { background-color: var(--switch-color); color: white; }
-        #stopBtn { background-color: #f44336; color: white; }
+
+        #startBtn {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        #switchBtn {
+            background-color: var(--switch-color);
+            color: white;
+        }
+
+        #stopBtn {
+            background-color: #f44336;
+            color: white;
+        }
 
         .layout-toggle {
             display: flex;
@@ -80,6 +134,7 @@
             border-radius: 6px;
             padding: 3px;
         }
+
         .layout-toggle button {
             flex: 1;
             background: none;
@@ -90,6 +145,7 @@
             font-size: 0.75rem;
             border-radius: 4px;
         }
+
         .layout-toggle button.active {
             background: #666;
             color: white;
@@ -99,7 +155,7 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             padding: 5px 12px;
             border-radius: 15px;
             font-size: 0.8rem;
@@ -107,16 +163,17 @@
         }
     </style>
 </head>
+
 <body class="layout-right">
 
     <div id="video-container">
-        <video id="playback" class="mirror" autoplay playsinline muted></video>
+        <video id="playback" class="mirror" playsinline muted></video>
         <div id="statusBadge" class="status-badge">カメラじゅんびOK</div>
     </div>
 
     <div id="controls">
         <h2>タイムシフト</h2>
-        
+
         <div class="setting-group">
             <label style="font-size:0.8rem;">さかのぼる時間</label>
             <div class="display-value"><span id="delaySeconds">10</span>秒</div>
@@ -125,7 +182,7 @@
 
         <button id="startBtn" class="btn">スタート！</button>
         <button id="switchBtn" class="btn">カメラをかえる</button>
-        
+
         <button id="stopBtn" class="btn" style="display:none;">やりなおす</button>
 
         <div class="setting-group">
@@ -134,6 +191,13 @@
                 <button id="btnRight" class="active">みぎ</button>
                 <button id="btnBottom">した</button>
             </div>
+        </div>
+
+        <div class="setting-group" style="margin-top: 10px; border-top: 1px solid #555; padding-top: 10px;">
+            <label style="font-size:0.8rem;">プレビュー <span id="cameraName"
+                    style="font-size:0.7rem; color:#aaa;"></span></label>
+            <video id="livePreview" autoplay playsinline muted
+                style="width: 100%; border-radius: 6px; background: #000;"></video>
         </div>
 
         <div style="font-size: 0.7rem; color: #777; margin-top: auto;">
@@ -152,25 +216,90 @@
         const body = document.body;
         const btnRight = document.getElementById('btnRight');
         const btnBottom = document.getElementById('btnBottom');
+        const livePreview = document.getElementById('livePreview');
+        const cameraName = document.getElementById('cameraName');
 
-        let chunks = [];
         let mediaRecorder = null;
+        let currentStream = null;
         let currentFacingMode = "user"; // 初期値はインカメラ
+
+        // MediaSource関連
+        let mediaSource = null;
+        let sourceBuffer = null;
+        let mimeType = '';
+        let queue = [];
+        let isUpdating = false;
 
         delayRange.addEventListener('input', () => {
             delaySecondsDisplay.textContent = delayRange.value;
         });
 
+        // サポートされているMIMEタイプを取得
+        function getSupportedMimeType() {
+            const types = [
+                'video/webm; codecs=vp9',
+                'video/webm; codecs=vp8',
+                'video/webm',
+                'video/mp4; codecs="avc1.42E01E,mp4a.40.2"', // Safari用
+                'video/mp4'
+            ];
+            for (const type of types) {
+                if (MediaRecorder.isTypeSupported(type) && MediaSource.isTypeSupported(type)) {
+                    return type;
+                }
+            }
+            console.warn("適切なMIMEタイプが見つかりませんでした。デフォルトを使用します。");
+            return 'video/webm'; // フォールバック
+        }
+
+        // カメラを開始・再起動する関数
+        async function startCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            // UI更新
+            cameraName.textContent = (currentFacingMode === "user") ? "(インカメラ)" : "(アウトカメラ)";
+            if (currentFacingMode === "user") {
+                livePreview.classList.add('mirror');
+                videoElem.classList.add('mirror');
+            } else {
+                livePreview.classList.remove('mirror');
+                videoElem.classList.remove('mirror');
+            }
+
+            const constraints = {
+                video: {
+                    facingMode: { exact: currentFacingMode },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            };
+
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                livePreview.srcObject = currentStream;
+                statusBadge.textContent = "カメラじゅんびOK";
+
+                // MIMEタイプ決定（カメラ起動後に確認）
+                mimeType = getSupportedMimeType();
+                console.log("Selected MIME:", mimeType);
+
+            } catch (err) {
+                console.error(err);
+                statusBadge.textContent = "カメラエラー";
+                alert("カメラがつかえませんでした。");
+            }
+        }
+
+        // ページ読み込み時にカメラを開始
+        startCamera();
+
         // カメラ切り替え
         switchBtn.addEventListener('click', () => {
             currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-            // インカメラの時だけ鏡（反転）にする
-            if (currentFacingMode === "user") {
-                videoElem.classList.add('mirror');
-            } else {
-                videoElem.classList.remove('mirror');
-            }
-            statusBadge.textContent = "カメラをきりかえました";
+            startCamera();
         });
 
         btnRight.addEventListener('click', () => {
@@ -186,47 +315,112 @@
 
         startBtn.addEventListener('click', async () => {
             try {
-                // Android等では exact (厳格) を指定しないとカメラが切り替わらないことがあります
-                const constraints = {
-                    video: { 
-                        facingMode: { exact: currentFacingMode }, 
-                        width: { ideal: 1280 }, 
-                        height: { ideal: 720 } 
-                    },
-                    audio: false
-                };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                if (!currentStream) {
+                    await startCamera();
+                }
+                if (!currentStream) return;
 
                 startBtn.style.display = 'none';
                 switchBtn.style.display = 'none';
                 stopBtn.style.display = 'block';
                 delayRange.disabled = true;
-                statusBadge.textContent = `${delayRange.value}秒ごに うごきだすよ`;
 
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) {
-                        chunks.push(e.data);
-                        if (chunks.length >= delayRange.value && videoElem.paused) {
-                            startPlayback();
-                        }
-                    }
-                };
-                mediaRecorder.start(1000);
+                const delaySec = parseInt(delayRange.value, 10);
+                statusBadge.textContent = `${delaySec}秒ためています...`;
+
+                // MediaSourceのセットアップ
+                mediaSource = new MediaSource();
+                videoElem.src = URL.createObjectURL(mediaSource);
+
+                mediaSource.addEventListener('sourceopen', () => {
+                    setupSourceBuffer(delaySec);
+                });
 
             } catch (err) {
-                alert("カメラがつかえませんでした。");
+                console.error(err);
+                alert("エラーが発生しました: " + err.message);
             }
         });
 
-        function startPlayback() {
-            const blob = new Blob(chunks, { type: 'video/webm' });
-            videoElem.src = URL.createObjectURL(blob);
-            videoElem.play();
-            statusBadge.textContent = "タイムシフトちゅう";
+        function setupSourceBuffer(delaySec) {
+            try {
+                sourceBuffer = mediaSource.addSourceBuffer(mimeType);
+                sourceBuffer.mode = 'sequence';
+
+                sourceBuffer.addEventListener('updateend', () => {
+                    isUpdating = false;
+                    processQueue();
+
+                    // バッファの古い部分を削除（メモリ管理）
+                    // 現在の再生位置より十分に前を削除
+                    if (!videoElem.paused && videoElem.currentTime > 20) {
+                        // 安全マージンをとって削除
+                        const removeEnd = videoElem.currentTime - 20;
+                        if (mediaSource.readyState === 'open' && !sourceBuffer.updating && removeEnd > 0 && sourceBuffer.buffered.length > 0 && sourceBuffer.buffered.start(0) < removeEnd) {
+                            // 今回はシンプルにするため、明示的な削除は慎重に行う
+                            // sourceBuffer.remove(0, removeEnd); 
+                            // ※頻繁なremoveは不安定になることがあるため、ここでは長時間の使用でメモリ圧迫が懸念される場合のみ検討
+                        }
+                    }
+                });
+
+                startRecording(delaySec);
+
+            } catch (e) {
+                console.error("SourceBuffer error:", e);
+                alert("ブラウザがこの形式に対応していないようです。");
+            }
         }
 
+        function startRecording(delaySec) {
+            mediaRecorder = new MediaRecorder(currentStream, { mimeType: mimeType });
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    e.data.arrayBuffer().then(buffer => {
+                        queue.push(buffer);
+                        processQueue();
+                        checkPlayStart(delaySec);
+                    });
+                }
+            };
+
+            // こまめにデータを取得（100msごと）
+            mediaRecorder.start(100);
+        }
+
+        function processQueue() {
+            if (queue.length > 0 && !isUpdating && mediaSource.readyState === 'open' && sourceBuffer && !sourceBuffer.updating) {
+                isUpdating = true;
+                const buffer = queue.shift();
+                try {
+                    sourceBuffer.appendBuffer(buffer);
+                } catch (e) {
+                    console.error("appendBuffer error:", e);
+                    isUpdating = false;
+                }
+            }
+        }
+
+        function checkPlayStart(delaySec) {
+            if (videoElem.paused && sourceBuffer && sourceBuffer.buffered.length > 0) {
+                const bufferedDuration = sourceBuffer.buffered.end(0) - sourceBuffer.buffered.start(0);
+                // 指定秒数＋少し余裕を持ってバッファされたら再生開始
+                if (bufferedDuration >= delaySec) {
+                    videoElem.play().then(() => {
+                        statusBadge.textContent = "タイムシフトさいせいちゅう";
+                        // 開始位置をバッファの先頭に合わせる
+                        videoElem.currentTime = sourceBuffer.buffered.start(0);
+                    }).catch(e => console.error("Play error:", e));
+                } else {
+                    statusBadge.textContent = `ためています... ${(bufferedDuration).toFixed(1)} / ${delaySec}秒`;
+                }
+            }
+        }
+
+        // 停止ボタンはリロードでリセット
         stopBtn.addEventListener('click', () => location.reload());
     </script>
 </body>
+
 </html>
